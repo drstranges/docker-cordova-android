@@ -1,58 +1,61 @@
-FROM alpine:3.11
+ARG javaVersion=8u242
+ARG javaAlphineVersion=8.242.08-r0
+ARG androidSdkTools=commandlinetools-linux-6200805_latest.zip
 
-# Setup ENV
+FROM alpine:3.11 as base
+# Setup base tools
+
+ARG javaVersion
+ARG javaAlphineVersion
 
 ENV JAVA_HOME=/usr/lib/jvm/default-jvm \
-    JAVA_VERSION=8u242 \
-    JAVA_ALPINE_VERSION=8.242.08-r0 \
-    VERSION_SDK_TOOLS=6200805 \
-    ANDROID_HOME=/usr/local/android-sdk-linux \
-    CORDOVA_VERSION=9.0.0 \
-    CORDOVA_ANDROID_VERSION=8.1.0
+    JAVA_VERSION=${javaVersion} \
+    JAVA_ALPINE_VERSION=${javaAlphineVersion} \
+    ANDROID_HOME=/opt/android-sdk \
+    ANDROID_SDK_CMD_TOOLS_HOME=/opt/android-sdk/cmdline-tools
 
-ENV PATH=$PATH:$JAVA_HOME/jre/bin:$JAVA_HOME/bin:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools \
+ENV PATH=$PATH:$JAVA_HOME/jre/bin:$JAVA_HOME/bin:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$ANDROID_SDK_CMD_TOOLS_HOME:$ANDROID_SDK_CMD_TOOLS_HOME/tools/bin \
     LANG=C.UTF-8
 
-ENV 
+RUN apk add --no-cache openjdk8="$JAVA_ALPINE_VERSION" \
+    && apk add --no-cache bash curl git openssl openssh-client ca-certificates
 
-# Install jdk, bash, curl, git, openssl
 
-RUN mkdir -p $ANDROID_HOME && \
-    chown -R root.root $ANDROID_HOME && \
-
-RUN apk add --no-cache openjdk8="$JAVA_ALPINE_VERSION" && \
-apk add --no-cache bash curl git openssl openssh-client ca-certificates
-
+FROM base
 # Install android-sdk
 
-RUN wget -q -O sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-$VERSION_SDK_TOOLS_latest.zip && \
-unzip sdk.zip -d $ANDROID_HOME && \
-rm -f sdk.zip
+ARG androidSdkTools
 
-# Install and update Android packages
+ADD android-packages.txt $ANDROID_HOME
 
-ADD packages.txt $ANDROID_HOME
+RUN echo $ANDROID_HOME && echo $ANDROID_SDK_CMD_TOOLS_HOME \
+    && mkdir -p $ANDROID_SDK_CMD_TOOLS_HOME \
+    && wget -q -O sdk.zip https://dl.google.com/android/repository/${androidSdkTools} \
+    && unzip sdk.zip -d $ANDROID_SDK_CMD_TOOLS_HOME \
+    && rm -f sdk.zip \
+    && mkdir -p $HOME/.android \
+    && touch $HOME/.android/repositories.cfg \
+    && yes | sdkmanager --licenses \
+    && sdkmanager --package_file=$ANDROID_HOME/android-packages.txt \
+    && mkdir -p $HOME/.gradle \
+    && echo "org.gradle.daemon=false" >> $HOME/.gradle/gradle.properties \
+    && echo "org.gradle.console=plain" >> $HOME/.gradle/gradle.properties
 
-RUN mkdir -p /root/.android && \
-    touch /root/.android/repositories.cfg && \
+# Use this instead above to update packages if got error
+# while read -r package; do PACKAGES="${PACKAGES}${package} "; done < $ANDROID_HOME/android-packages.txt \
+#   && sdkmanager ${PACKAGES}
 
-sdkmanager --update && yes | sdkmanager --licenses && \
-sdkmanager --package_file=$ANDROID_HOME/android-packages.txt
 
-# Install cordova
+FROM base
+# Install cordova && cache Cordova Android platform & build tools
 
 RUN apk add --no-cache nodejs npm yarn \
-    && npm install --global cordova@${CORDOVA_VERSION} \
+    && npm install --global cordova \
     && cordova telemetry off \
-    && npm cache clean \
-    && cordova -v
-
-# Cache Cordova Android platform & build tools
-RUN cordova create /tmp/dummy dummy.app DummyApp \
+    && cordova -v \
+    && cordova create /tmp/dummy dummy.app DummyApp \
     && cd /tmp/cordovacache \
-    && cordova platform add android@${CORDOVA_ANDROID_VERSION} \
+    && cordova platform add android \
     && cordova build android \
-    && rm -rf /tmp/dummy
-
-# Install quasar-cli
-RUN yarn global add @quasar/cli
+    && rm -rf /tmp/dummy \
+    && yarn global add @quasar/cli

@@ -13,8 +13,8 @@ A minimal Docker image based on [Alpine Linux](https://hub.docker.com/_/alpine) 
 - Android SDK Platform-Tools ( **latest** )
 - Android Support Repository ( **latest** )
 - Quasar-CLI ( **latest** )
-- Cordova ( **9.0.0** )
-- Cordova Andrroid Platform ( **8.1.0** )
+- Cordova ( **latest** )
+- Cordova Andrroid Platform ( **latest** )
 - add-ons: **bash, curl, git, openssl, openssh-client, ca-certificates, yarn, node**
 
 ## Usage
