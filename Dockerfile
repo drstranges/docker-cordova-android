@@ -1,87 +1,58 @@
 ARG javaVersion=8u242
 ARG javaAlphineVersion=8.242.08-r0
 ARG androidSdkTools=commandlinetools-linux-6200805_latest.zip
-# ARG gradleVersion=5.4.1
-# ARG gradleZip=gradle-5.4.1-bin.zip
-# ARG gradleWorkDir=/home/gradle
+ARG glibcVersion=2.29-r0
 
-FROM alpine:3.11 as base
-# Setup base tools
+FROM node:13.8.0-alpine3.11 as quasar
+
+RUN apk add --no-cache npm yarn \
+    && npm install --g cordova \
+    && cordova telemetry off \
+    && cordova -v \
+    && npm install -g @quasar/cli
+
+# =======================================================================================
+
+FROM quasar as quasar-android
 
 ARG javaVersion
 ARG javaAlphineVersion
-# ARG gradleWorkDir
-# ARG gradleVersion
+ARG androidSdkTools
+ARG glibcVersion
 
 ENV JAVA_HOME=/usr/lib/jvm/default-jvm \
     JAVA_VERSION=${javaVersion} \
     JAVA_ALPINE_VERSION=${javaAlphineVersion} \
     ANDROID_SDK_ROOT=/opt/android-sdk \
     ANDROID_HOME=/opt/android-sdk \
-    ANDROID_SDK_CMD_TOOLS_HOME=/opt/android-sdk/cmdline-tools \
-    GRADLE_USER_HOME=/gradle
+    ANDROID_SDK_CMD_TOOLS_HOME=/opt/android-sdk/cmdline-tools
 
-#    GRADLE_VERSION=${gradleVersion} \
-#    GRADLE_HOME=${gradleWorkDir}/gradle-${gradleVersion} \
-#    GRADLE_USER_HOME=/gradle
+ENV PATH=$PATH:$JAVA_HOME/jre/bin:$JAVA_HOME/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_CMD_TOOLS_HOME/tools/bin
 
-ENV PATH=$PATH:$JAVA_HOME/jre/bin:$JAVA_HOME/bin:$ANDROID_SDK_ROOT/tools:$ANDROID_SDK_ROOT/tools/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_CMD_TOOLS_HOME:$ANDROID_SDK_CMD_TOOLS_HOME/tools/bin
+ADD android-packages.txt /home
 
-# :$GRADLE_HOME:$GRADLE_HOME/bin:$GRADLE_USER_HOME
-
-RUN mkdir -p $ANDROID_SDK_ROOT \
+RUN echo "Installing openjdk8..." \
+    && apk add --no-cache openjdk8="$JAVA_ALPINE_VERSION" git \
+    && apk add --no-cache --virtual=.build-dependencies wget ca-certificates \
+    && echo "Installing glibc..." \
+    && wget https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -O /etc/apk/keys/sgerrand.rsa.pub \
+    && wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${glibcVersion}/glibc-${glibcVersion}.apk -O /tmp/glibc.apk \
+    && wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${glibcVersion}/glibc-bin-${glibcVersion}.apk -O /tmp/glibc-bin.apk \
+    && apk add --no-cache /tmp/glibc.apk /tmp/glibc-bin.apk \
+    && rm "/etc/apk/keys/sgerrand.rsa.pub" "/tmp/glibc.apk" "/tmp/glibc-bin.apk" \
+    && echo "Installing android-build-tools..." \
+    && mkdir -p $ANDROID_SDK_ROOT \
     && mkdir -p $ANDROID_SDK_CMD_TOOLS_HOME \
-    && apk add --no-cache openjdk8="$JAVA_ALPINE_VERSION" \
-    && apk add --no-cache bash curl git openssl openssh-client ca-certificates
-
-#    && mkdir -p $GRADLE_USER_HOME \
-#    && mkdir -p $GRADLE_HOME
-
-
-FROM base
-# Install android-sdk and gradle
-
-ARG androidSdkTools
-# ARG gradleWorkDir
-# ARG gradleZip
-# ARG gradleVersion
-#     && wget -q -O gradle.zip https://services.gradle.org/distributions/${gradleZip} \
-#     && unzip gradle.zip -d ${gradleWorkDir} \
-#     && rm -f gradle.zip \
-#     && echo -ne "- with Gradle ${gradleVersion}\n" >> /root/.built
-
-ADD android-packages.txt $ANDROID_SDK_ROOT
-
-RUN mkdir -p $HOME/.gradle \
-    && echo "org.gradle.daemon=false" >> $HOME/.gradle/gradle.properties \
-    && echo "org.gradle.console=plain" >> $HOME/.gradle/gradle.properties \
-    && apk add --no-cache gradle \
-    && echo $ANDROID_SDK_ROOT && echo $ANDROID_SDK_CMD_TOOLS_HOME \
+    && mkdir -p $HOME/.android \
+    && touch $HOME/.android/repositories.cfg \
     && wget -q -O sdk.zip https://dl.google.com/android/repository/${androidSdkTools} \
     && unzip sdk.zip -d $ANDROID_SDK_CMD_TOOLS_HOME \
     && rm -f sdk.zip \
-    && mkdir -p $HOME/.android \
-    && touch $HOME/.android/repositories.cfg \
+    && echo "Accepting all licenses..." \
     && yes | sdkmanager --licenses > /dev/null \
-    && sdkmanager --package_file=$ANDROID_SDK_ROOT/android-packages.txt
+    && sdkmanager --package_file=/home/android-packages.txt \
+    && rm "/root/.wget-hsts" \
+    && apk del .build-dependencies
 
-# Use this instead above to update packages if got error
-# while read -r package; do PACKAGES="${PACKAGES}${package} "; done < $ANDROID_SDK_ROOT/android-packages.txt \
-# && sdkmanager ${PACKAGES}
-
-
-FROM base
-# Install cordova && cache Cordova Android platform & build tools
-
-RUN apk add --no-cache nodejs npm yarn \
-    && npm install --global cordova \
-    && cordova telemetry off \
-    && cordova -v \
-    && yarn global add @quasar/cli
-
-#    && cordova create /tmp/dummy dummy.app DummyApp \
-#    && cd /tmp/dummy \
-#    && cordova platform add android \
-#    && cordova build android \
-#    && rm -rf /tmp/dummy
+ENTRYPOINT ["/bin/sh"]
 
