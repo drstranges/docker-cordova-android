@@ -1,5 +1,7 @@
 # docker-cordova-android
-A minimal Docker image based on [Alpine Linux](https://hub.docker.com/_/alpine) with environment for building app with cordova for android
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-info-blue.svg)](https://hub.docker.com/r/drstranges/alpine-cordova-android)
+
+A Docker image based on [Alpine Linux](https://hub.docker.com/_/alpine) with environment for building app with cordova for android
 
 ## Content &nbsp;/
 
@@ -15,7 +17,7 @@ A minimal Docker image based on [Alpine Linux](https://hub.docker.com/_/alpine) 
 - Quasar-CLI ( **latest** )
 - Cordova ( **latest** )
 - Cordova Andrroid Platform ( **latest** )
-- add-ons: **bash, curl, git, openssl, openssh-client, ca-certificates, yarn, node**
+- add-ons: **git, yarn, node**
 
 ## Usage
 
