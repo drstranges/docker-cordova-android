@@ -50,7 +50,7 @@ RUN echo "Installing openjdk8..." \
     && rm -f sdk.zip \
     && echo "Accepting all licenses..." \
     && yes | sdkmanager --licenses > /dev/null \
-    && sdkmanager --package_file=/home/android-packages.txt \
+#    && sdkmanager --package_file=/home/android-packages.txt \
     && rm "/root/.wget-hsts" \
     && apk del .build-dependencies
 

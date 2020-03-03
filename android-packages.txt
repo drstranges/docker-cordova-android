@@ -1,6 +1,3 @@
 build-tools;28.0.3
 platform-tools
 platforms;android-28
-extras;android;m2repository
-extras;google;google_play_services
-extras;google;m2repository
