@@ -1,5 +1,6 @@
 # docker-cordova-android
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-info-blue.svg)](https://hub.docker.com/r/drstranges/alpine-cordova-android)
+[![](https://images.microbadger.com/badges/image/drstranges/alpine-cordova-android.svg)](https://microbadger.com/images/drstranges/alpine-cordova-android)
 
 A Docker image based on [Alpine Linux](https://hub.docker.com/_/alpine) with environment for building app with cordova for android
 
@@ -9,14 +10,9 @@ A Docker image based on [Alpine Linux](https://hub.docker.com/_/alpine) with env
 - OpenJDK 8 ( **8u242** )
 - Android SDK ( **8+ P, API 28, rev 6 (6200805)** )
 - Android SDK Build-Tools ( **28.0.3** )
-- Google Repository ( **latest** )
-- Google Play Services ( **latest** )
-- Android SDK Tools ( **latest** )
 - Android SDK Platform-Tools ( **latest** )
-- Android Support Repository ( **latest** )
 - Quasar-CLI ( **latest** )
 - Cordova ( **latest** )
-- Cordova Andrroid Platform ( **latest** )
 - add-ons: **git, yarn, node**
 
 ## Usage

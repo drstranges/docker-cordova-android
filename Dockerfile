@@ -2,6 +2,7 @@ ARG javaVersion=8u242
 ARG javaAlphineVersion=8.242.08-r0
 ARG androidSdkTools=commandlinetools-linux-6200805_latest.zip
 ARG glibcVersion=2.29-r0
+ARG VCS_REF="git rev-parse --short HEAD"
 
 FROM node:13.8.0-alpine3.11 as quasar
 
@@ -19,6 +20,7 @@ ARG javaVersion
 ARG javaAlphineVersion
 ARG androidSdkTools
 ARG glibcVersion
+ARG VCS_REF
 
 ENV JAVA_HOME=/usr/lib/jvm/default-jvm \
     JAVA_VERSION=${javaVersion} \
@@ -50,9 +52,12 @@ RUN echo "Installing openjdk8..." \
     && rm -f sdk.zip \
     && echo "Accepting all licenses..." \
     && yes | sdkmanager --licenses > /dev/null \
-#    && sdkmanager --package_file=/home/android-packages.txt \
+    && sdkmanager --package_file=/home/android-packages.txt \
     && rm "/root/.wget-hsts" \
     && apk del .build-dependencies
+
+    LABEL org.label-schema.vcs-ref=${VCS_REF} \
+          org.label-schema.vcs-url="e.g. https://github.com/microscaling/microscaling"
 
 ENTRYPOINT ["/bin/sh"]
 
